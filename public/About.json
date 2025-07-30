@@ -1,0 +1,26 @@
+[
+    {
+      "name": "Nur Alam Shawon",
+      "role": "Full Stack Developer",
+      "department": "CSE, East West University",
+      "image": "https://i.postimg.cc/8Pqg02Kf/Photoroom-20250512-185459.jpgg"
+    },
+    {
+      "name": "Rafi-al-Sakif",
+      "role": "Backend Developer",
+      "department": "CSE, East West University",
+      "image": "https://i.postimg.cc/FsFYKLNV/image.png"
+    },
+    {
+      "name": "Antara Sarkar Rupa",
+      "role": "Project Manager",
+      "department": "CSE, East West University",
+      "image": "https://i.postimg.cc/9fwRhHC3/image.png"
+    },
+    {
+      "name": "Md. Tanvir Jobayer Khan",
+      "role": "Project Manager",
+      "department": "CSE, East West University",
+      "image": "https://i.postimg.cc/k4x22N2f/image.png"
+    }
+  ]

@@ -1,0 +1,32 @@
+[
+  {
+    "title": "Focused on the whole child",
+    "desc": "We help students understand NCTB Class 3 math deeply while encouraging creativity and emotional development.",
+    "icon": "https://cdn-icons-png.flaticon.com/512/4151/4151022.png",
+    "path": "/course-details"
+  },
+  {
+    "title": "Joyful",
+    "desc": "Fun, friendly characters guide children through engaging math activities tailored for young minds.",
+    "icon": "https://cdn-icons-png.flaticon.com/512/9415/9415636.png",
+    "path": "/avater"
+  },
+  {
+    "title": "Engaging",
+    "desc": "Interactive videos, worksheets, and games captivate attention and enhance concept understanding.",
+    "icon": "https://cdn-icons-png.flaticon.com/512/3845/3845805.png",
+    "path": "/games"
+  },
+  {
+    "title": "Developed by experts",
+    "desc": "Content designed with educators, aligned with NCTB and best practices in early learning.",
+    "icon": "https://cdn-icons-png.flaticon.com/512/4421/4421000.png",
+    "path": "/about"
+  },
+  {
+    "title": "100% Free",
+    "desc": "No ads, no subscriptions. MiniMinds is completely free to use—always.",
+    "icon": "https://cdn-icons-png.flaticon.com/512/9925/9925019.png",
+    "path": "/authentication"
+  }
+]

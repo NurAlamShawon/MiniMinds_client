@@ -1,0 +1,36 @@
+[
+  {
+    "title": "MiniMinds Math",
+    "description": "Engaging NCTB-based math lessons made fun for Class 3 students!",
+    "linkText": "Start Learning",
+    "bg": "from-blue-100 to-blue-200",
+    "img": "https://cdn-icons-png.flaticon.com/512/4151/4151000.png",
+    "path": "/my-classes"
+  },
+  {
+    "title": "Interactive Practice",
+    "description": "Quizzes, puzzles, and games to reinforce core math concepts.",
+    "linkText": "Explore Activities",
+    "bg": "from-green-100 to-green-200",
+    "img": "https://cdn-icons-png.flaticon.com/512/2490/2490404.png",
+    "path": "/my-classes"
+  },
+
+  {
+    "title": "Progress Tracking",
+    "description": "Monitor learning milestones and student achievements easily.",
+    "linkText": "Check Progress",
+    "bg": "from-pink-100 to-pink-200",
+    "img": "https://cdn-icons-png.flaticon.com/512/4359/4359976.png",
+    "path": "/standings"
+  },
+
+  {
+    "title": "Math Videos",
+    "description": "Watch fun, concept-based Class 3 math videos in Bangla.",
+    "linkText": "Watch Now",
+    "bg": "from-orange-100 to-orange-200",
+    "img": "https://cdn-icons-png.flaticon.com/512/3176/3176292.png",
+    "path": "/my-classes"
+  }
+]
