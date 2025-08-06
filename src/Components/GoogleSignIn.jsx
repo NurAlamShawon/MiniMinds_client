@@ -1,9 +1,7 @@
 import React, { useContext } from "react";
-import { ValueContext } from "../../Context/ValueContext";
 import { useLocation, useNavigate } from "react-router";
-import { sendEmailVerification } from "firebase/auth/cordova";
-import { auth } from "../../firebase-init";
-import Useaxios from "../../Hooks/Useaxios";
+import { ValueContext } from "../Context/ValueContext";
+import Useaxios from "../Hooks/Useaxios";
 
 const GoogleSignIn = () => {
   const navigate = useNavigate();
@@ -14,14 +12,8 @@ const GoogleSignIn = () => {
   const loginwithgoogle = () => {
     signupwithgoogle()
       .then(async (result) => {
-        sendEmailVerification(auth.currentUser)
-          .then(() => {
-            alert("Verification email sent. Please check your inbox.");
-            // Optionally sign out the user until they verify
-          })
-          .catch((err) => {
-            console.log("Email verification error:", err);
-          });
+        console.log(result);
+
         //save in the database
         const userInfo = {
           name: result.user.displayName,
@@ -29,6 +21,7 @@ const GoogleSignIn = () => {
           role: "user",
           created_At: new Date().toISOString(),
           last_log_in: new Date().toISOString(),
+          img: result.user.photoURL,
         };
 
         const res = await axiosInstance.post("/users", userInfo);

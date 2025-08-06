@@ -1,8 +1,8 @@
 import React, { useContext, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router";
-import { auth } from "../../firebase-init";
-import GoogleSignIn from "../GoogleSignIn/GoogleSignIn";
-import { ValueContext } from "../../Context/ValueContext";
+import GoogleSignIn from "./GoogleSignIn";;
+import { auth } from "../firebase-init";
+import { ValueContext } from "../Context/ValueContext";
 
 const Login = () => {
   const [eye, seteye] = useState(false);

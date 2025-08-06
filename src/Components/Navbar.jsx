@@ -2,13 +2,27 @@ import React, { useContext } from "react";
 import { Link, NavLink } from "react-router";
 import { ValueContext } from "../Context/ValueContext";
 import MiniMindsLogo from "./MiniMindsLogo";
+import Useaxios from "../Hooks/Useaxios";
+import { useQuery } from "@tanstack/react-query";
 
 const Navbar = () => {
-    const { currentuser, signout } = useContext(ValueContext);
-    console.log(currentuser);
-    const hanglegotologin = () => {
-      signout();
-    };
+  const { currentuser, signout } = useContext(ValueContext);
+  const axiosInstance = Useaxios();
+  const hanglegotologin = () => {
+    signout();
+  };
+
+  const {
+    data: dbUser,
+    isLoading,
+  } = useQuery({
+    queryKey: ["user", currentuser?.email],
+    enabled: !!currentuser?.email,
+    queryFn: async () => {
+      const res = await axiosInstance.get(`/users?email=${currentuser.email}`);
+      return res.data[0]; 
+    },
+  });
 
   return (
     <div className="mb-10 raleway">
@@ -87,18 +101,14 @@ const Navbar = () => {
               <NavLink to={"/games"}>Games</NavLink>
             </li>
           </ul>
-          {currentuser ? (
-            <div
-              className="tooltip  tooltip-bottom cursor-pointer"
-              data-tip={currentuser.displayName}
-            >
-              <img src={currentuser.photoURL} className="w-8 h-8 mr-1 rounded-4xl"></img>
-            </div>
+
+          {isLoading ? (
+            "Loading..."
           ) : (
             <img
-              src="https://i.postimg.cc/xCXgGNKq/image.png"
-              className="w-8 h-8 mr-1"
-            ></img>
+              src={dbUser?.img || "https://i.postimg.cc/xCXgGNKq/image.png"}
+              className="w-8 h-8 rounded-full"
+            />
           )}
 
           {currentuser ? (
@@ -114,7 +124,7 @@ const Navbar = () => {
                 {" "}
                 <button className="btn btn-info xl:mx-2">Login</button>
               </Link>
-              <Link to="register">
+              <Link to="registration">
                 {" "}
                 <button className="btn btn-success xl:block hidden">
                   Register

@@ -8,6 +8,9 @@ import Premium from "../Components/Premium";
 import Standings from "../Components/Standings";
 import Games from "../Components/Games";
 import About from "../Components/About";
+import AuthenticationLayout from "../Layouts/AuthenticationLayout";
+import Login from "../Components/Login";
+import Registration from "../Components/Registration";
 
 const router = createBrowserRouter([
   {
@@ -22,6 +25,20 @@ const router = createBrowserRouter([
       { path: "standings", Component: Standings },
       { path: "games", Component: Games },
       { path: "about", Component: About },
+    ],
+  },
+  {
+    path: "authentication",
+    Component: AuthenticationLayout,
+    children: [
+      {
+        index: true,
+        Component: Login,
+      },
+      {
+        path: "Registration",
+        Component: Registration,
+      },
     ],
   },
 ]);

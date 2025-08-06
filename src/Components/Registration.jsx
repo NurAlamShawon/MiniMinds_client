@@ -1,12 +1,11 @@
 import React, { useContext, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router";
-import { auth } from "../../../src/firebase-init";
-import { sendEmailVerification, updateProfile } from "firebase/auth";
-import { ValueContext } from "../../Context/ValueContext";
-import GoogleSignIn from "../GoogleSignIn/GoogleSignIn";
+import { sendEmailVerification } from "firebase/auth";
 import axios from "axios";
-import Useaxios from "../../Hooks/Useaxios";
-
+import { auth } from "../firebase-init";
+import { ValueContext } from "../Context/ValueContext";
+import GoogleSignIn from "./GoogleSignIn";
+import Useaxios from "../Hooks/Useaxios";
 
 const Registration = () => {
   const { signupwithemail } = useContext(ValueContext);
@@ -71,6 +70,7 @@ const Registration = () => {
           role: "user",
           created_At: new Date().toISOString(),
           last_log_in: new Date().toISOString(),
+          img: url,
         };
 
         const res = await axiosInstance.post("/users", userInfo);
@@ -88,19 +88,21 @@ const Registration = () => {
             console.log("Email verification error:", err);
           });
 
+        navigate(location?.state || "/");
+
         // update user
-        updateProfile(auth.currentUser, {
-          displayName: name,
-          photoURL: url,
-        })
-          .then(() => {
-            // console.log("profile updated", result);
-            navigate(location?.state || "/");
-          })
-          .catch((error) => {
-            console.log(error);
-            seterror(error.message);
-          });
+        // updateProfile(auth.currentUser, {
+        //   displayName: name,
+        //   photoURL: url,
+        // })
+        //   .then(() => {
+        //     // console.log("profile updated", result);
+
+        //   })
+        //   .catch((error) => {
+        //     console.log(error);
+        //     seterror(error.message);
+        //   });
       })
       .catch((error) => {
         console.log(error);
@@ -227,7 +229,7 @@ const Registration = () => {
               <p className="text-red-500  text-base"> {error ? error : ""}</p>
             </div>
 
-            <GoogleSignIn></GoogleSignIn>
+            <GoogleSignIn />
           </form>
         </div>
       </div>
