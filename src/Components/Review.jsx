@@ -1,16 +1,18 @@
 import React, { useState } from "react";
+import Useaxios from "../Hooks/Useaxios";
 const CARD_WIDTH = 350;
 const GAP = 16;
+
 const Review = () => {
   const [testimonials, setTestimonials] = useState([]);
   const [current, setCurrent] = useState(0);
+  const axiosInstance = Useaxios();
 
   useState(() => {
     const fetchReview = async () => {
       try {
-        const res = await fetch("/Review.json");
-        const data = await res.json();
-        setTestimonials(data);
+        const data = await axiosInstance.get("/review");
+        setTestimonials(data.data);
       } catch (error) {
         console.error("Error loading testimonials:", error);
       }
