@@ -4,13 +4,14 @@ import { ValueContext } from "../Context/ValueContext";
 import Useaxios from "./Useaxios";
 
 const UseUserRole = () => {
-  const { currentuser, loading } = useContext(ValueContext); // get email from context
+  const { currentuser, loading } = useContext(ValueContext);
   const axiosInstance = Useaxios();
 
   const fetchUserRole = async (email) => {
     if (!email) return null;
-    const { data } = await axiosInstance.get(`/users/role?email=${email}`);
-    return data.role;
+    const { data } = await axiosInstance.get(`/users?email=${email}`);
+    console.log("Fetched user:", data[0]);
+    return data[0]?.role;
   };
 
   const email = currentuser?.email;
@@ -26,7 +27,7 @@ const UseUserRole = () => {
     queryFn: () => fetchUserRole(email),
     enabled: !!email && !loading,
     staleTime: 1000 * 60 * 5,
-    refetchOnWindowFocus: false,
+    refetchOnWindowFocus: true,
   });
 
   const isLoading = loading || roleLoading;

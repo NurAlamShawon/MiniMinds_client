@@ -11,6 +11,11 @@ import About from "../Components/About";
 import AuthenticationLayout from "../Layouts/AuthenticationLayout";
 import Login from "../Components/Login";
 import Registration from "../Components/Registration";
+import Dashboard from "../Components/Dashboard/Dashboard";
+import DashBoardLayout from "../Layouts/DashBoardLayout";
+import MyUsers from "../Components/Dashboard/MyUsers";
+import AddLesson from "../Components/Dashboard/AddLesson";
+import MakeAdmin from "../Components/Dashboard/MakeAdmin";
 
 const router = createBrowserRouter([
   {
@@ -38,6 +43,22 @@ const router = createBrowserRouter([
       {
         path: "Registration",
         Component: Registration,
+      },
+    ],
+  },
+  {
+    path: "dashboard",
+    Component: DashBoardLayout,
+    children: [
+      {
+        index: true,
+        Component: Dashboard,
+      },
+      { path: "my-users", Component: MyUsers },
+      { path: "add-lesson", Component: AddLesson },
+      {
+        path: "make-admin",
+        Component: MakeAdmin,
       },
     ],
   },

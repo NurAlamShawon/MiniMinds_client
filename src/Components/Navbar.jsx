@@ -12,15 +12,12 @@ const Navbar = () => {
     signout();
   };
 
-  const {
-    data: dbUser,
-    isLoading,
-  } = useQuery({
+  const { data: dbUser, isLoading } = useQuery({
     queryKey: ["user", currentuser?.email],
     enabled: !!currentuser?.email,
     queryFn: async () => {
       const res = await axiosInstance.get(`/users?email=${currentuser.email}`);
-      return res.data[0]; 
+      return res.data[0];
     },
   });
 
@@ -64,6 +61,10 @@ const Navbar = () => {
                 <NavLink to={"/avater"}>Avatar</NavLink>
               </li>
               <li>
+                <NavLink to={"/dashboard"}>Dashboard</NavLink>
+              </li>
+
+              <li>
                 <NavLink to={"/Premium"}>Premium</NavLink>
               </li>
               <li>
@@ -80,7 +81,7 @@ const Navbar = () => {
           </div>
         </div>
 
-        <div className="navbar-end w-76 xl:w-250">
+        <div className="navbar-end w-76 xl:w-280">
           <ul className="xl:menu space-x-5 xl:menu-horizontal px-1 hidden">
             <li>
               <NavLink to={"/course-details"}>Course Details</NavLink>
@@ -94,6 +95,9 @@ const Navbar = () => {
             <li>
               <NavLink to={"/Premium"}>Premium</NavLink>
             </li>
+              <li>
+                <NavLink to={"/dashboard"}>Dashboard</NavLink>
+              </li>
             <li>
               <NavLink to={"/standings"}>Standings</NavLink>
             </li>
