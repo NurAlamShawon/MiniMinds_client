@@ -24,6 +24,7 @@ const GoogleSignIn = () => {
           img: result.user.photoURL,
         };
 
+
         const res = await axiosInstance.post("/users", userInfo);
         console.log(res);
 
