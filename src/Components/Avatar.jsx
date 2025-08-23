@@ -10,12 +10,13 @@ import "swiper/css/scrollbar";
 import Useaxios from "../Hooks/Useaxios";
 import { ValueContext } from "../Context/ValueContext";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import Swal from "sweetalert2";
 
 const Avatar = () => {
   const axiosInstance = Useaxios();
   const [avater, setavater] = useState([]);
   const { currentuser } = useContext(ValueContext);
-    const queryClient = useQueryClient();
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     const fetchAvaters = async () => {
@@ -32,20 +33,32 @@ const Avatar = () => {
 
   const mutation = useMutation({
     mutationFn: async (newImg) => {
-      return await axiosInstance.patch(`/users/${currentuser.email}`, {
+      return await axiosInstance.patch(`/avater/${currentuser.email}`, {
         img: newImg,
       });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ["user", currentuser.email],
+        queryKey: ["user", currentuser?.email],
       });
     },
   });
 
   const handleAddAvatar = (newImgUrl) => {
     mutation.mutate(newImgUrl);
-    alert("Avater Changed!")
+    Swal.fire({
+      title: "Avater has Changed",
+      width: 600,
+      padding: "3em",
+      color: "#716add",
+      background: "#fff url(/images/trees.png)",
+      backdrop: `
+    rgba(0,0,123,0.4)
+    url("/images/nyan-cat.gif")
+    left top
+    no-repeat
+  `,
+    });
   };
 
   return (

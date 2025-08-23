@@ -16,6 +16,9 @@ import DashBoardLayout from "../Layouts/DashBoardLayout";
 import MyUsers from "../Components/Dashboard/MyUsers";
 import AddLesson from "../Components/Dashboard/AddLesson";
 import MakeAdmin from "../Components/Dashboard/MakeAdmin";
+import AdminRoute from "./AdminRoute";
+import PrivateRoute from "./PrivateRoute";
+import GiftRedeem from "../Components/GiftRedeem";
 
 const router = createBrowserRouter([
   {
@@ -24,11 +27,12 @@ const router = createBrowserRouter([
     children: [
       { index: true, Component: Home },
       { path: "course-details", Component: CourseDetails },
-      { path: "my-classes", Component: Myclasses },
-      { path: "avater", Component: Avatar },
+      { path: "my-classes", element:<PrivateRoute><Myclasses/></PrivateRoute> },
+      { path: "avater", element:<PrivateRoute><Avatar/></PrivateRoute> },
       { path: "Premium", Component: Premium },
-      { path: "standings", Component: Standings },
-      { path: "games", Component: Games },
+      { path: "standings",element:<PrivateRoute><Standings/></PrivateRoute> },
+      { path: "games", element:<PrivateRoute><Games/></PrivateRoute> },
+      {path:"gift",element:<PrivateRoute><GiftRedeem/></PrivateRoute>},
       { path: "about", Component: About },
     ],
   },
@@ -41,14 +45,14 @@ const router = createBrowserRouter([
         Component: Login,
       },
       {
-        path: "Registration",
+        path: "registration",
         Component: Registration,
       },
     ],
   },
   {
     path: "dashboard",
-    Component: DashBoardLayout,
+    element:<AdminRoute><Dashboard/></AdminRoute>,
     children: [
       {
         index: true,

@@ -1,7 +1,7 @@
 import React from "react";
-import UseUserRole from "../../Hooks/UseUserRole";
 import AdminDashboard from "./AdminDashboard";
 import Forbidden from "../Forbidden";
+import UseUserRole from "../../Hooks/UseuserRole";
 
 const Dashboard = () => {
   const { role } = UseUserRole();

@@ -71,6 +71,7 @@ const Registration = () => {
           created_At: new Date().toISOString(),
           last_log_in: new Date().toISOString(),
           img: url,
+          gems:0,
         };
 
         const res = await axiosInstance.post("/users", userInfo);

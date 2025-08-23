@@ -1,15 +1,17 @@
 import React, { useState, useEffect } from "react";
 import Useaxios from "../Hooks/Useaxios";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 const ReviewBox = () => {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
-    title: "",   // new field
-    message: "", // renamed from review to message
+    title: "",
+    message: "",
   });
 
   const axiosInstance = Useaxios();
+  const queryClient = useQueryClient();
 
   const [loading, setLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
@@ -24,26 +26,35 @@ const ReviewBox = () => {
     if (name === "message") setCharCount(value.length);
   };
 
+  // Mutation to submit a review
+  const { mutate: submitReview } = useMutation({
+    mutationFn: async (payload) => {
+      // Expecting 201 Created; handle as success anyway
+      return axiosInstance.post("/review", payload);
+    },
+    onSuccess: () => {
+      // Clear form
+      setFormData({ name: "", email: "", title: "", message: "" });
+      setCharCount(0);
+      setSuccessMessage("Thanks for your review!");
+
+      // 🔄 Trigger Review component to refetch instantly
+      queryClient.invalidateQueries({ queryKey: ["reviews"] });
+    },
+    onError: () => {
+      setErrorMessage("Something went wrong. Try again later.");
+    },
+    onSettled: () => {
+      setLoading(false);
+    },
+  });
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setErrorMessage("");
     setSuccessMessage("");
-    try {
-      const response = await axiosInstance.post("/review", formData);
-      if (response.status === 201) {
-        setSuccessMessage("Thanks for your review!");
-        setFormData({ name: "", email: "", title: "", message: "" });
-        setCharCount(0);
-      } else {
-        setErrorMessage("Failed to submit review. Please try again.");
-      }
-    } catch (error) {
-      setErrorMessage("Something went wrong. Try again later.");
-      console.error("Review submission failed:", error);
-    } finally {
-      setLoading(false);
-    }
+    submitReview(formData);
   };
 
   // Auto-hide toast messages after 5 seconds

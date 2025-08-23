@@ -22,6 +22,7 @@ const GoogleSignIn = () => {
           created_At: new Date().toISOString(),
           last_log_in: new Date().toISOString(),
           img: result.user.photoURL,
+          gems:0,
         };
 
 

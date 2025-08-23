@@ -1,7 +1,7 @@
 import React from "react";
 import { Link, Outlet } from "react-router";
-import UseUserRole from "../Hooks/UseUserRole";
 import MiniMindsLogo from "../Components/MiniMindsLogo";
+import UseUserRole from "../Hooks/UseuserRole";
 
 const DashBoardLayout = () => {
   const { role, isLoading } = UseUserRole();

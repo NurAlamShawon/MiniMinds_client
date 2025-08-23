@@ -1,17 +1,16 @@
 import React, { useEffect, useState, useContext } from "react";
-import Useaxios from "../Hooks/Useaxios";
-import Swal from 'sweetalert2/dist/sweetalert2.js';
-import 'sweetalert2/src/sweetalert2.scss';
-import { ValueContext } from "../Context/ValueContext"; 
+import Swal from "sweetalert2/dist/sweetalert2.js";
+import "sweetalert2/src/sweetalert2.scss";
+import { ValueContext } from "../Context/ValueContext";
+import UseAxiosSecure from "../Hooks/UseAxiosSecure";
 
 const Myclasses = () => {
-  const axiosInstance = Useaxios();
+  const axiosInstance = UseAxiosSecure();
   const { currentuser } = useContext(ValueContext);
-
   const [currentUserId, setCurrentUserId] = useState(null);
+  const [currentGems, setCurrentGems] = useState(0);
   const [lessons, setLessons] = useState([]);
   const [expandedLesson, setExpandedLesson] = useState(null);
-  const [expandedSubparts, setExpandedSubparts] = useState({});
   const [selectedVideoLink, setSelectedVideoLink] = useState("");
   const [selectedSubpartName, setSelectedSubpartName] = useState("");
   const [selectedSubpartIndex, setSelectedSubpartIndex] = useState(null);
@@ -19,28 +18,27 @@ const Myclasses = () => {
   const [quizAnswers, setQuizAnswers] = useState({});
   const [quizAttempts, setQuizAttempts] = useState({});
 
-  // Fetch authenticated user's _id from /users
+  // fetch user
   useEffect(() => {
     if (!currentuser?.email) return;
-
-    const fetchUserId = async () => {
+    const fetchUser = async () => {
       try {
         const res = await axiosInstance.get(`/users?email=${currentuser.email}`);
         if (res.data && res.data.length > 0) {
-          setCurrentUserId(res.data[0]._id);
+          const user = res.data[0];
+          setCurrentUserId(user._id);
+          setCurrentGems(Number(user.gems || 0));
         }
       } catch (err) {
-        console.error("Failed to fetch user ID", err);
+        console.error("Failed to fetch user", err);
       }
     };
-
-    fetchUserId();
+    fetchUser();
   }, [currentuser, axiosInstance]);
 
-  // Fetch lessons and quiz attempts
+  // fetch lessons + attempt state
   useEffect(() => {
     if (!currentUserId) return;
-
     const fetchLessons = async () => {
       try {
         const res = await axiosInstance.get("/lessons");
@@ -54,9 +52,8 @@ const Myclasses = () => {
                 `/quiz-results/${currentUserId}/${lesson._id}`
               );
               attempts[lesson._id] = result.data.attempted;
-            } catch (err) {
+            } catch {
               attempts[lesson._id] = false;
-              console.log(err)
             }
           })
         );
@@ -65,7 +62,6 @@ const Myclasses = () => {
         console.error("Failed to fetch lessons", err);
       }
     };
-
     fetchLessons();
   }, [axiosInstance, currentUserId]);
 
@@ -76,30 +72,7 @@ const Myclasses = () => {
     return match && match[2] ? `https://www.youtube.com/embed/${match[2]}` : url;
   };
 
-  const toggleLesson = (index) => {
-    if (expandedLesson === index) {
-      setExpandedLesson(null);
-      setExpandedSubparts({});
-      setSelectedVideoLink("");
-      setSelectedSubpartName("");
-      setSelectedSubpartIndex(null);
-      setShowQuiz(false);
-      setQuizAnswers({});
-    } else {
-      setExpandedLesson(index);
-      setExpandedSubparts({});
-      setSelectedVideoLink("");
-      setSelectedSubpartName("");
-      setSelectedSubpartIndex(null);
-      setShowQuiz(false);
-      setQuizAnswers({});
-    }
-  };
-
-  const toggleSubparts = (index) => {
-    setExpandedSubparts((prev) => ({ ...prev, [index]: !prev[index] }));
-  };
-
+  // helper to set current subpart
   const handleSubpartClick = (link, name, idx) => {
     setSelectedVideoLink(getYouTubeEmbedUrl(link));
     setSelectedSubpartName(name);
@@ -108,19 +81,22 @@ const Myclasses = () => {
     setQuizAnswers({});
   };
 
+  // Next/Prev navigation
   const goNext = () => {
     if (expandedLesson === null || selectedSubpartIndex === null) return;
     const parts = lessons[expandedLesson]?.parts || [];
-    if (selectedSubpartIndex + 1 < parts.length) {
-      handleSubpartClick(parts[selectedSubpartIndex + 1].link, parts[selectedSubpartIndex + 1].name, selectedSubpartIndex + 1);
+    const nextIdx = selectedSubpartIndex + 1;
+    if (nextIdx < parts.length) {
+      handleSubpartClick(parts[nextIdx].link, parts[nextIdx].name, nextIdx);
     }
   };
 
   const goPrev = () => {
     if (expandedLesson === null || selectedSubpartIndex === null) return;
-    if (selectedSubpartIndex - 1 >= 0) {
+    const prevIdx = selectedSubpartIndex - 1;
+    if (prevIdx >= 0) {
       const parts = lessons[expandedLesson]?.parts || [];
-      handleSubpartClick(parts[selectedSubpartIndex - 1].link, parts[selectedSubpartIndex - 1].name, selectedSubpartIndex - 1);
+      handleSubpartClick(parts[prevIdx].link, parts[prevIdx].name, prevIdx);
     }
   };
 
@@ -128,23 +104,28 @@ const Myclasses = () => {
     setQuizAnswers((prev) => ({ ...prev, [qIdx]: option }));
   };
 
+  const awardGems = async (award) => {
+    if (award <= 0) return;
+    try {
+      const newTotal = currentGems + award;
+      await axiosInstance.patch(`/users/gems/${currentuser.email}`, { gems: newTotal });
+      setCurrentGems(newTotal);
+    } catch (err) {
+      console.error("Failed to award gems", err);
+    }
+  };
+
   const submitQuiz = async () => {
-    if (!currentUserId) return alert("User not loaded yet.");
-    if (expandedLesson === null) return alert("Please select a lesson first.");
-
+    if (!currentUserId || expandedLesson === null) return;
     const quiz = lessons[expandedLesson].quiz;
-    if (!quiz || quiz.length === 0) return alert("No quiz questions available.");
+    if (!quiz || quiz.length === 0) return;
 
-    const correctCount = quiz.reduce((count, q, idx) => count + (quizAnswers[idx] === q.correctAnswer ? 1 : 0), 0);
+    const correctCount = quiz.reduce(
+      (count, q, idx) => count + (quizAnswers[idx] === q.correctAnswer ? 1 : 0),
+      0
+    );
 
-    Swal.fire({
-      title: "Quiz Submitted!",
-      text: `You scored ${correctCount} out of ${quiz.length}`,
-      icon: "success",
-      showClass: { popup: "animate__animated animate__fadeInUp animate__faster" },
-      hideClass: { popup: "animate__animated animate__fadeOutDown animate__faster" }
-    });
-
+    // save results
     try {
       await axiosInstance.post("/quiz-results", {
         userId: currentUserId,
@@ -152,114 +133,192 @@ const Myclasses = () => {
         score: correctCount,
         total: quiz.length,
       });
-
-      setQuizAttempts((prev) => ({ ...prev, [lessons[expandedLesson]._id]: true }));
-    } catch (error) {
-      console.error("Failed to save quiz result", error);
-      alert("Failed to save quiz result");
+      setQuizAttempts((prev) => ({
+        ...prev,
+        [lessons[expandedLesson]._id]: true,
+      }));
+    } catch (err) {
+      console.error("Failed to save quiz result", err);
     }
 
+    // award
+    let award = 0;
+    if (correctCount === quiz.length) award = 2;
+    else if (correctCount === quiz.length - 1) award = 1;
+
+    if (correctCount === quiz.length) {
+      // 🎉 fun animated backdrop for perfect score
+      await Swal.fire({
+        title: "🎉 Amazing! Perfect Score!",
+        html: `<b>You earned 2 gems 💎💎</b>`,
+        width: 600,
+        padding: "2em",
+        color: "#2563eb",
+        background: "#fff url('/images/confetti-bg.png')",
+        backdrop: `
+          rgba(0,0,123,0.4)
+          url("/images/nyan-cat.gif")
+          left top
+          no-repeat
+        `,
+        timer: 3000,
+        showConfirmButton: false,
+      });
+    } else {
+      await Swal.fire({
+        title: "Quiz Submitted!",
+        text:
+          award === 1
+            ? `You scored ${correctCount}/${quiz.length}. Great job—earned 1 gem! 💎`
+            : `You scored ${correctCount}/${quiz.length}. Keep practicing!`,
+        icon: award === 1 ? "success" : "info",
+        confirmButtonColor: "#22c55e",
+      });
+    }
+
+    await awardGems(award);
     setShowQuiz(false);
     setQuizAnswers({});
   };
 
   return (
-    <div className="flex flex-col lg:flex-row h-full max-h-[calc(100vh-4rem)] gap-4 p-4">
-      {/* Left side */}
-      <div className="flex-1 bg-gray-100 rounded-lg p-4 shadow-md flex flex-col overflow-auto">
+    <div className="flex xl:my-10 flex-col lg:flex-row gap-4 p-4">
+      {/* LEFT: video/quiz viewer */}
+      <div className="flex-1 bg-base-200 rounded-lg p-4 shadow-md flex flex-col">
         {showQuiz ? (
-          <h2 className="text-xl font-semibold mb-4">
-            Quiz: {expandedLesson !== null ? lessons[expandedLesson].lessonHeading : ""}
+          <h2 className="text-2xl font-bold mb-4 text-center text-indigo-600">
+            📝 Quiz Time
           </h2>
         ) : (
-          selectedSubpartName && <h2 className="text-xl font-semibold mb-2">{selectedSubpartName}</h2>
+          selectedSubpartName && (
+            <h2 className="text-xl font-bold mb-2 text-blue-600">
+              📺 {selectedSubpartName}
+            </h2>
+          )
         )}
 
         {showQuiz ? (
-          <form className="overflow-auto max-h-[calc(100vh-8rem)]">
-            {expandedLesson !== null && lessons[expandedLesson].quiz.length > 0 ? (
-              lessons[expandedLesson].quiz.map((q, idx) => (
-                <div key={idx} className="mb-4 p-2 border rounded bg-white shadow-sm">
-                  <p className="font-semibold">Q{idx + 1}. {q.question}</p>
-                  {["optionA", "optionB", "optionC", "optionD"].map((opt) => (
-                    <label key={opt} className="block cursor-pointer mt-1">
-                      <input
-                        type="radio"
-                        name={`question_${idx}`}
-                        value={opt.charAt(opt.length - 1).toUpperCase()}
-                        checked={quizAnswers[idx] === opt.charAt(opt.length - 1).toUpperCase()}
-                        onChange={() => handleOptionChange(idx, opt.charAt(opt.length - 1).toUpperCase())}
-                        className="mr-2"
-                      />
-                      {q[opt]}
-                    </label>
-                  ))}
-                </div>
-              ))
-            ) : <p>No quiz available</p>}
-
-            <button type="button" onClick={submitQuiz} className="btn btn-primary w-full">Submit</button>
+          <form className="overflow-auto max-h-[calc(100vh-8rem)] space-y-4">
+            {lessons[expandedLesson]?.quiz.map((q, idx) => (
+              <div
+                key={idx}
+                className="card bg-white shadow hover:shadow-lg transition transform hover:scale-[1.01] p-4"
+              >
+                <p className="font-semibold mb-2">
+                  Q{idx + 1}. {q.question}
+                </p>
+                {["optionA", "optionB", "optionC", "optionD"].map((opt) => (
+                  <label
+                    key={opt}
+                    className="flex items-center gap-2 p-2 rounded cursor-pointer hover:bg-blue-50"
+                  >
+                    <input
+                      type="radio"
+                      name={`question_${idx}`}
+                      value={opt.slice(-1).toUpperCase()}
+                      checked={quizAnswers[idx] === opt.slice(-1).toUpperCase()}
+                      onChange={() =>
+                        handleOptionChange(idx, opt.slice(-1).toUpperCase())
+                      }
+                      className="radio radio-primary"
+                    />
+                    {q[opt]}
+                  </label>
+                ))}
+              </div>
+            ))}
+            <button
+              type="button"
+              onClick={submitQuiz}
+              className="btn btn-primary w-full text-lg mt-2"
+            >
+              Submit Quiz 🚀
+            </button>
           </form>
         ) : selectedVideoLink ? (
-          <iframe src={selectedVideoLink} title="Lesson Video" allowFullScreen className="flex-grow w-full rounded" style={{ minHeight: "360px" }} frameBorder="0" />
+          <>
+            <iframe
+              src={selectedVideoLink}
+              title="Lesson Video"
+              allowFullScreen
+              className="flex-grow w-full rounded-lg shadow"
+              style={{ minHeight: "360px" }}
+            />
+            {/* Next / Prev buttons – same logic, nicer style */}
+            <div className="mt-4 flex justify-center gap-4">
+              <button
+                onClick={goPrev}
+                disabled={selectedSubpartIndex === 0 || selectedSubpartIndex === null}
+                className="btn btn-outline btn-accent"
+              >
+                ⬅ Previous
+              </button>
+              <button
+                onClick={goNext}
+                disabled={
+                  expandedLesson === null ||
+                  selectedSubpartIndex === null ||
+                  selectedSubpartIndex === (lessons[expandedLesson]?.parts.length ?? 0) - 1
+                }
+                className="btn btn-outline btn-success"
+              >
+                Next ➡
+              </button>
+            </div>
+          </>
         ) : (
           <div className="flex-grow flex items-center justify-center text-gray-500">
-            Select a lesson video or quiz to display
-          </div>
-        )}
-
-        {!showQuiz && (
-          <div className="mt-4 flex justify-center gap-4">
-            <button onClick={goPrev} disabled={selectedSubpartIndex === 0 || selectedSubpartIndex === null} className="btn btn-primary">Previous</button>
-            <button onClick={goNext} disabled={expandedLesson === null || selectedSubpartIndex === null || selectedSubpartIndex === lessons[expandedLesson]?.parts.length - 1} className="btn btn-primary">Next</button>
+            Select a lesson video or quiz
           </div>
         )}
       </div>
 
-      {/* Right side */}
-      <div className="w-full lg:w-96 bg-white rounded-lg shadow-md overflow-auto max-h-full p-4">
-        <h2 className="text-xl font-semibold mb-4">Lessons</h2>
-        {lessons.map((lesson, lessonIdx) => (
-          <div key={lesson._id || lessonIdx} className="border rounded mb-4">
-            <button onClick={() => toggleLesson(lessonIdx)} className="w-full flex justify-between items-center px-4 py-3 bg-blue-50 hover:bg-blue-100">
-              <span>{lesson.lessonHeading}</span>
-              <span>{expandedLesson === lessonIdx ? "−" : "+"}</span>
-            </button>
-
-            {expandedLesson === lessonIdx && (
-              <div className="p-4 bg-gray-50">
-                <button onClick={() => toggleSubparts(lessonIdx)} className="w-full flex justify-between items-center mb-2 px-2 py-1 bg-gray-200 rounded hover:bg-gray-300">
-                  <span>Sub Parts</span>
-                  <span>{expandedSubparts[lessonIdx] ? "−" : "+"}</span>
-                </button>
-
-                {expandedSubparts[lessonIdx] &&
-                  (lesson.parts.length === 0 ? (
-                    <p className="text-gray-500 px-2">No sub parts</p>
-                  ) : (
-                    <ul className="list-disc list-inside mb-4 max-h-40 overflow-y-auto">
-                      {lesson.parts.map((part, partIdx) => (
-                        <li key={partIdx} className="cursor-pointer text-blue-700 hover:underline" onClick={() => handleSubpartClick(part.link, part.name, partIdx)}>
-                          {part.name}
-                        </li>
-                      ))}
-                    </ul>
-                  ))}
-
+      {/* RIGHT: lesson list */}
+      <div className="w-full lg:w-96 bg-base-100 rounded-lg shadow-md overflow-auto p-4">
+        <h2 className="text-xl font-bold mb-4 text-indigo-700">📚 Lessons</h2>
+        {lessons.map((lesson, idx) => (
+          <div
+            key={lesson._id || idx}
+            className="collapse collapse-arrow bg-base-200 mb-3 rounded-lg"
+          >
+            <input
+              type="checkbox"
+              checked={expandedLesson === idx}
+              onChange={() =>
+                setExpandedLesson(expandedLesson === idx ? null : idx)
+              }
+            />
+            <div className="collapse-title font-semibold flex justify-between">
+              {lesson.lessonHeading}
+              {quizAttempts[lesson._id] && (
+                <span className="badge badge-success">✔ Done</span>
+              )}
+            </div>
+            <div className="collapse-content space-y-2">
+              {lesson.parts.map((part, pIdx) => (
                 <button
-                  onClick={() => {
-                    setShowQuiz(true);
-                    setSelectedVideoLink("");
-                    setSelectedSubpartName("");
-                    setSelectedSubpartIndex(null);
-                  }}
-                  disabled={quizAttempts[lesson._id]}
-                  className={`btn btn-secondary w-full ${quizAttempts[lesson._id] ? "opacity-50 cursor-not-allowed" : ""}`}
+                  key={pIdx}
+                  className="btn btn-sm btn-outline w-full justify-start"
+                  onClick={() => handleSubpartClick(part.link, part.name, pIdx)}
                 >
-                  {quizAttempts[lesson._id] ? "Quiz Attempted" : "Take Quiz"}
+                  ▶ {part.name}
                 </button>
-              </div>
-            )}
+              ))}
+              <button
+                className={`btn btn-secondary w-full mt-2 ${
+                  quizAttempts[lesson._id] ? "opacity-50 cursor-not-allowed" : ""
+                }`}
+                disabled={quizAttempts[lesson._id]}
+                onClick={() => {
+                  setShowQuiz(true);
+                  setSelectedVideoLink("");
+                  setSelectedSubpartName("");
+                  setSelectedSubpartIndex(null);
+                }}
+              >
+                {quizAttempts[lesson._id] ? "Quiz Attempted" : "Take Quiz"}
+              </button>
+            </div>
           </div>
         ))}
       </div>

@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
-import Useaxios from "../Hooks/Useaxios";
+import UseAxiosSecure from "../Hooks/UseAxiosSecure";
 
 const Standings = () => {
-  const axiosInstance = Useaxios();
+  const axiosInstance = UseAxiosSecure();
   const [lessons, setLessons] = useState([]);
   const [selectedLesson, setSelectedLesson] = useState(null);
   const [standings, setStandings] = useState([]);
@@ -46,10 +46,10 @@ const Standings = () => {
           <button
             key={lesson._id}
             onClick={() => setSelectedLesson(lesson)}
-            className={`px-4 py-2 rounded ${
+            className={`px-4 py-2 rounded btn  text-white transition-colors duration-500 transform ${
               selectedLesson?._id === lesson._id
-                ? "bg-blue-600 text-white"
-                : "bg-gray-200 text-gray-700"
+                ? "bg-blue-600 "
+                : "bg-green-600 "
             }`}
           >
             {lesson.lessonHeading}

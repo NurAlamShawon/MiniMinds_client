@@ -20,14 +20,14 @@ const CourseDetails = () => {
 
   return (
     <div className="p-4 max-w-7xl mx-auto">
-      <h2 className="text-2xl font-semibold mb-4 text-center">Course Lessons</h2>
+      <h2 className="text-2xl font-semibold mb-4 text-center ">Course Lessons</h2>
       <div className="grid grid-cols-1  gap-4">
         {lessons.map((lesson) => (
           <div
             key={lesson._id}
             className="bg-white rounded-lg shadow-md p-4 flex flex-col justify-between hover:shadow-lg transition"
           >
-            <h3 className="text-lg font-semibold mb-2">{lesson.lessonHeading}</h3>
+            <h3 className="text-lg font-semibold mb-2 text-sky-400">{lesson.lessonHeading}</h3>
             <p className="text-gray-600">
               Subparts: {lesson.parts?.length || 0}
             </p>

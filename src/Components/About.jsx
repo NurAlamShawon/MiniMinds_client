@@ -16,12 +16,12 @@ const About = () => {
     <div className="max-w-7xl mx-auto px-4 py-10">
       <div className="text-center mb-10">
         <img
-          src={data.icon}
+          src='https://i.postimg.cc/T3Vn3wkj/image.png'
           alt="About Icon"
-          className="mx-auto w-16 h-16 mb-4"
+          className="mx-auto w-66  mb-4"
         />
-        <h1 className="text-3xl font-bold mb-2">{data.title}</h1>
-        <p className="text-gray-600">{data.desc}</p>
+        <h1 className="text-3xl font-bold mb-2">About Us</h1>
+        <p className="text-gray-600">Meet with our Team</p>
       </div>
 
       <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
