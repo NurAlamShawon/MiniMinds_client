@@ -19,6 +19,7 @@ import MakeAdmin from "../Components/Dashboard/MakeAdmin";
 import AdminRoute from "./AdminRoute";
 import PrivateRoute from "./PrivateRoute";
 import GiftRedeem from "../Components/GiftRedeem";
+import AdminRedemptionsPending from "../Components/Dashboard/AdminRedemptionsPending";
 
 const router = createBrowserRouter([
   {
@@ -52,7 +53,7 @@ const router = createBrowserRouter([
   },
   {
     path: "dashboard",
-    element:<AdminRoute><Dashboard/></AdminRoute>,
+    element:<AdminRoute><DashBoardLayout/></AdminRoute>,
     children: [
       {
         index: true,
@@ -63,6 +64,10 @@ const router = createBrowserRouter([
       {
         path: "make-admin",
         Component: MakeAdmin,
+      },
+      {
+        path: "redem-pending",
+        Component: AdminRedemptionsPending,
       },
     ],
   },

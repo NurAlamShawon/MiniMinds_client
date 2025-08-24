@@ -1,10 +1,11 @@
 import React, { useContext, useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ValueContext } from "../Context/ValueContext";
-import UseAxiosSecure from "../Hooks/UseAxiosSecure";
+import Useaxios from "../Hooks/Useaxios";
+
 
 export default function GiftRedeem() {
-  const axiosInstance = UseAxiosSecure();
+  const axiosInstance = Useaxios();
   const queryClient = useQueryClient();
   const { currentuser } = useContext(ValueContext);
   const isLoggedIn = !!currentuser?.email;
@@ -22,7 +23,7 @@ export default function GiftRedeem() {
 
   const gems = dbUser?.gems ?? 0;
 
-  // 2) Load gifts from /public/gifts.json  (lowercase!)
+  // 2) Load gifts from /public/Gift.json
   const {
     data: gifts = [],
     isLoading: giftsLoading,
@@ -61,7 +62,7 @@ export default function GiftRedeem() {
   }, [dbUser?.name, currentuser?.displayName]);
 
   const canAfford = useMemo(() => {
-    const cost = selectedGift?.cost ?? 0;
+    const cost = Number(selectedGift?.cost ?? 0);
     return gems >= cost;
   }, [selectedGift, gems]);
 
@@ -79,15 +80,13 @@ export default function GiftRedeem() {
     setSelectedGift(null);
   };
 
-  // 4) Mutation: create redemption + deduct gems (with fallback)
+  // 4) Mutation: create redemption + deduct gems using /gems/:email/deduct
   const redeemMutation = useMutation({
     mutationFn: async ({ gift, address }) => {
-      const rawCost = gift.cost;
-      // Block redeem if price not set
-      if (rawCost == null || Number.isNaN(Number(rawCost))) {
+      const cost = Number(gift.cost);
+      if (!Number.isFinite(cost) || cost <= 0) {
         throw new Error("Price not set for this gift");
       }
-      const cost = Number(rawCost);
 
       // 1) Create a redemption
       await axiosInstance.post("/redemptions", {
@@ -96,30 +95,28 @@ export default function GiftRedeem() {
         giftName: gift.name,
         giftImg: gift.img,
         cost,
-        address, // { name, phone, address1, address2, city, postalCode, notes }
+        address,
         createdAt: new Date().toISOString(),
       });
 
-      // 2) Deduct gems
-      // First try increment-style (award)
-      try {
-        await axiosInstance.patch(`/users/gems/${currentuser.email}`, { award: -cost });
-      } catch {
-        // Fallback: absolute setter
-        const newTotal = Math.max(0, (dbUser?.gems ?? 0) - cost);
-        await axiosInstance.patch(`/users/gems/${currentuser.email}`, { gems: newTotal });
-      }
+      // 2) Deduct gems (server clamps at >=0)
+      const { data } = await axiosInstance.patch(
+        `/gems/${currentuser.email}/deduct`,
+        { cost }
+      );
+      // data: { ok: true, email, gems }
+      return data;
     },
 
-    // Optimistic update (only if cost is a number)
+    // Optimistic update
     onMutate: async ({ gift }) => {
-      const rawCost = gift.cost;
-      const cost = rawCost == null ? 0 : Number(rawCost);
+      const cost = Number(gift.cost ?? 0);
       const key = ["user", currentuser?.email];
+
       await queryClient.cancelQueries({ queryKey: key });
       const prevUser = queryClient.getQueryData(key);
 
-      if (prevUser && !Number.isNaN(cost)) {
+      if (prevUser && Number.isFinite(cost)) {
         queryClient.setQueryData(key, {
           ...prevUser,
           gems: Math.max(0, (prevUser.gems ?? 0) - cost),
@@ -129,14 +126,19 @@ export default function GiftRedeem() {
     },
 
     onError: (err, _vars, ctx) => {
-      // rollback
       if (ctx?.prevUser && currentuser?.email) {
         queryClient.setQueryData(["user", currentuser.email], ctx.prevUser);
       }
-      (window).toast?.error?.(err?.message || "Redemption failed. Please try again.");
+      (window).toast?.error?.(err?.response?.data?.error || err?.message || "Redemption failed. Please try again.");
     },
 
-    onSuccess: () => {
+    onSuccess: (data) => {
+      // Ensure cache matches server's final gems
+      if (data?.gems != null && currentuser?.email) {
+        queryClient.setQueryData(["user", currentuser.email], (prev) =>
+          prev ? { ...prev, gems: data.gems } : prev
+        );
+      }
       (window).toast?.success?.("Redeemed! We’ll ship your gift soon.");
     },
 
@@ -152,13 +154,11 @@ export default function GiftRedeem() {
     e.preventDefault();
     if (!selectedGift) return;
 
-    // cost must be set (and a number)
-    if (selectedGift.cost == null || Number.isNaN(Number(selectedGift.cost))) {
+    const cost = Number(selectedGift.cost);
+    if (!Number.isFinite(cost) || cost <= 0) {
       (window).toast?.info?.("This gift doesn't have a price yet.");
       return;
     }
-    const cost = Number(selectedGift.cost);
-
     if (!isLoggedIn) {
       (window).toast?.info?.("Please log in to redeem gifts.");
       return;
@@ -191,9 +191,7 @@ export default function GiftRedeem() {
           <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
             <path d="M12 3l3.09 3.09L21 7.5l-9 13.5L3 7.5l5.91-1.41L12 3z" />
           </svg>
-          <span className="font-semibold">
-            {isLoggedIn ? gems : "Login to see gems"}
-          </span>
+          <span className="font-semibold">{isLoggedIn ? gems : "Login to see gems"}</span>
         </div>
       </div>
 
@@ -210,60 +208,58 @@ export default function GiftRedeem() {
           </div>
         )}
 
-        {!giftsLoading &&
-          !giftsError &&
-          gifts.map((g) => {
-            const hasPrice = g.cost != null && !Number.isNaN(Number(g.cost));
-            const cost = hasPrice ? Number(g.cost) : 0;
-            const disabled = !isLoggedIn || !hasPrice || gems < cost || redeemMutation.isLoading;
+        {!giftsLoading && !giftsError && gifts.map((g) => {
+          const hasPrice = g.cost != null && Number.isFinite(Number(g.cost)) && Number(g.cost) > 0;
+          const cost = hasPrice ? Number(g.cost) : 0;
+          const disabled = !isLoggedIn || !hasPrice || gems < cost || redeemMutation.isLoading;
 
-            return (
-              <div key={g.id} className="card bg-base-100 shadow hover:shadow-lg transition h-full">
-                <figure className="px-4 pt-6">
-                  <div className="w-full aspect-square flex items-center justify-center">
-                    <img src={g.img} alt={g.name} className="max-h-40 object-contain" />
-                  </div>
-                </figure>
+          return (
+            <div key={g.id} className="card bg-base-100 shadow hover:shadow-lg transition h-full">
+              <figure className="px-4 pt-6">
+                <div className="w-full aspect-square flex items-center justify-center">
+                  <img src={g.img} alt={g.name} className="max-h-40 object-contain" />
+                </div>
+              </figure>
 
-                <div className="card-body p-4 flex flex-col items-center text-center">
-                  <h3 className="card-title text-base">{g.name}</h3>
+              <div className="card-body p-4 flex flex-col items-center text-center">
+                <h3 className="card-title text-base">{g.name}</h3>
 
-                  <div className="text-sm opacity-70">
-                    Cost:{" "}
-                    {!hasPrice ? (
-                      <span className="badge badge-ghost align-middle">Set price</span>
-                    ) : (
-                      <span className="badge badge-warning gap-1 align-middle">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
-                          <path d="M12 3l3.09 3.09L21 7.5l-9 13.5L3 7.5l5.91-1.41L12 3z" />
-                        </svg>
-                        {cost}
-                      </span>
-                    )}
-                  </div>
+                <div className="text-sm opacity-70">
+                  Cost:{" "}
+                  {!hasPrice ? (
+                    <span className="badge badge-ghost align-middle">Set price</span>
+                  ) : (
+                    <span className="badge badge-warning gap-1 align-middle">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 3l3.09 3.09L21 7.5l-9 13.5L3 7.5l5.91-1.41L12 3z" />
+                      </svg>
+                      {cost}
+                    </span>
+                  )}
+                </div>
 
-                  <div className="card-actions w-full mt-auto">
-                    <button
-                      className="btn btn-primary w-full"
-                      onClick={() => onOpenRedeem(g)}
-                      disabled={disabled}
-                      title={
-                        !isLoggedIn
-                          ? "Login first"
-                          : !hasPrice
-                          ? "Price not set"
-                          : gems < cost
-                          ? "Not enough gems"
-                          : ""
-                      }
-                    >
-                      Redeem
-                    </button>
-                  </div>
+                <div className="card-actions w-full mt-auto">
+                  <button
+                    className="btn btn-primary w-full"
+                    onClick={() => onOpenRedeem(g)}
+                    disabled={disabled}
+                    title={
+                      !isLoggedIn
+                        ? "Login first"
+                        : !hasPrice
+                        ? "Price not set"
+                        : gems < cost
+                        ? "Not enough gems"
+                        : ""
+                    }
+                  >
+                    Redeem
+                  </button>
                 </div>
               </div>
-            );
-          })}
+            </div>
+          );
+        })}
       </div>
 
       {/* Redeem Modal */}
@@ -288,118 +284,63 @@ export default function GiftRedeem() {
               </div>
             </div>
 
-            {/* Form (aligned labels/inputs) */}
+            {/* Form */}
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <label className="form-control w-full">
-                  <div className="label">
-                    <span className="label-text">Recipient Name *</span>
-                  </div>
-                  <input
-                    type="text"
-                    className="input input-bordered w-full"
-                    value={address.name}
-                    onChange={(e) => setAddress((s) => ({ ...s, name: e.target.value }))}
-                    required
-                  />
+                  <div className="label"><span className="label-text">Recipient Name *</span></div>
+                  <input type="text" className="input input-bordered w-full" value={address.name}
+                    onChange={(e) => setAddress((s) => ({ ...s, name: e.target.value }))} required />
                 </label>
 
                 <label className="form-control w-full">
-                  <div className="label">
-                    <span className="label-text">Phone *</span>
-                  </div>
-                  <input
-                    type="tel"
-                    className="input input-bordered w-full"
-                    value={address.phone}
-                    onChange={(e) => setAddress((s) => ({ ...s, phone: e.target.value }))}
-                    required
-                  />
+                  <div className="label"><span className="label-text">Phone *</span></div>
+                  <input type="tel" className="input input-bordered w-full" value={address.phone}
+                    onChange={(e) => setAddress((s) => ({ ...s, phone: e.target.value }))} required />
                 </label>
               </div>
 
               <label className="form-control w-full">
-                <div className="label">
-                  <span className="label-text">Address Line 1 *</span>
-                </div>
-                <input
-                  type="text"
-                  className="input input-bordered w-full"
-                  value={address.address1}
-                  onChange={(e) => setAddress((s) => ({ ...s, address1: e.target.value }))}
-                  required
-                />
+                <div className="label"><span className="label-text">Address Line 1 *</span></div>
+                <input type="text" className="input input-bordered w-full" value={address.address1}
+                  onChange={(e) => setAddress((s) => ({ ...s, address1: e.target.value }))} required />
               </label>
 
               <label className="form-control w-full">
-                <div className="label">
-                  <span className="label-text">Address Line 2</span>
-                </div>
-                <input
-                  type="text"
-                  className="input input-bordered w-full"
-                  value={address.address2}
-                  onChange={(e) => setAddress((s) => ({ ...s, address2: e.target.value }))}
-                />
+                <div className="label"><span className="label-text">Address Line 2</span></div>
+                <input type="text" className="input input-bordered w-full" value={address.address2}
+                  onChange={(e) => setAddress((s) => ({ ...s, address2: e.target.value }))} />
               </label>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <label className="form-control w-full">
-                  <div className="label">
-                    <span className="label-text">City *</span>
-                  </div>
-                  <input
-                    type="text"
-                    className="input input-bordered w-full"
-                    value={address.city}
-                    onChange={(e) => setAddress((s) => ({ ...s, city: e.target.value }))}
-                    required
-                  />
+                  <div className="label"><span className="label-text">City *</span></div>
+                  <input type="text" className="input input-bordered w-full" value={address.city}
+                    onChange={(e) => setAddress((s) => ({ ...s, city: e.target.value }))} required />
                 </label>
 
                 <label className="form-control w-full">
-                  <div className="label">
-                    <span className="label-text">Postal Code *</span>
-                  </div>
-                  <input
-                    type="text"
-                    className="input input-bordered w-full"
-                    value={address.postalCode}
-                    onChange={(e) => setAddress((s) => ({ ...s, postalCode: e.target.value }))}
-                    required
-                  />
+                  <div className="label"><span className="label-text">Postal Code *</span></div>
+                  <input type="text" className="input input-bordered w-full" value={address.postalCode}
+                    onChange={(e) => setAddress((s) => ({ ...s, postalCode: e.target.value }))} required />
                 </label>
               </div>
 
               <label className="form-control w-full">
-                <div className="label">
-                  <span className="label-text">Notes</span>
-                </div>
-                <textarea
-                  className="textarea textarea-bordered w-full"
-                  rows={3}
-                  value={address.notes}
-                  onChange={(e) => setAddress((s) => ({ ...s, notes: e.target.value }))}
-                  placeholder="Delivery instructions, landmark, etc."
-                />
+                <div className="label"><span className="label-text">Notes</span></div>
+                <textarea className="textarea textarea-bordered w-full" rows={3} value={address.notes}
+                  onChange={(e) => setAddress((s) => ({ ...s, notes: e.target.value }))} placeholder="Delivery instructions, landmark, etc." />
               </label>
 
               <div className="modal-action justify-end gap-2 pt-1">
-                <button type="button" className="btn" onClick={closeModal}>
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className={`btn btn-primary ${redeemMutation.isLoading ? "loading" : ""}`}
-                  disabled={redeemMutation.isLoading || !canAfford}
-                >
+                <button type="button" className="btn" onClick={closeModal}>Cancel</button>
+                <button type="submit" className={`btn btn-primary ${redeemMutation.isLoading ? "loading" : ""}`}
+                  disabled={redeemMutation.isLoading || !canAfford}>
                   {redeemMutation.isLoading ? "Processing" : "Confirm Redeem"}
                 </button>
               </div>
             </form>
           </div>
-
-          {/* clickable backdrop */}
           <div className="modal-backdrop" onClick={closeModal} />
         </div>
       )}

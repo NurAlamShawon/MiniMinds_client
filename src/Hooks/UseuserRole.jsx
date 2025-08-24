@@ -1,12 +1,13 @@
 import { useContext } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ValueContext } from "../Context/ValueContext";
-import UseAxiosSecure from "./UseAxiosSecure";
+import Useaxios from "./Useaxios";
+
 
 
 const UseUserRole = () => {
   const { currentuser, loading } = useContext(ValueContext);
-  const axiosInstance = UseAxiosSecure();
+  const axiosInstance = Useaxios();
 
   const fetchUserRole = async (email) => {
     if (!email) return null;
