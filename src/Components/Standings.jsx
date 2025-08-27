@@ -26,6 +26,7 @@ const Standings = () => {
 
     const fetchStandings = async () => {
       try {
+      
         const res = await axiosInstance.get(`/standings/${selectedLesson._id}`);
         setStandings(res.data);
       } catch (err) {

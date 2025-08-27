@@ -159,7 +159,7 @@ const Login = () => {
 
             <input
               type="submit"
-              value="Submit"
+              value="Login"
               className="text-white btn bg-primary w-full"
             />
             <br></br>

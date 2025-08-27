@@ -80,7 +80,7 @@ const Registration = () => {
         // const user = userCredential.user;
         // console.log(user);
         // verification code
-        sendEmailVerification(auth.email)
+        sendEmailVerification(auth.currentUser)
           .then(() => {
             alert("Verification email sent. Please check your inbox.");
             // Optionally sign out the user until they verify
