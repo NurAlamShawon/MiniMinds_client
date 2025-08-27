@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import Useaxios from "../../Hooks/Useaxios";
+import UseAxiosSecure from "../../Hooks/UseAxiosSecure";
+
 
 function formatDate(d) {
   try {
@@ -11,7 +12,7 @@ function formatDate(d) {
 }
 
 export default function AdminRedemptionsPending() {
-  const axiosInstance = Useaxios();
+  const axiosInstance = UseAxiosSecure();
   const queryClient = useQueryClient();
 
   // Load all redemptions; we'll filter pending on client
@@ -104,7 +105,7 @@ export default function AdminRedemptionsPending() {
 
       {isLoading && (
         <div className="flex justify-center py-10">
-          <span className="loading loading-bars loading-lg" />
+          <span className="loading loading-infinity loading-2xl mx-auto mt-20"></span>;
         </div>
       )}
 

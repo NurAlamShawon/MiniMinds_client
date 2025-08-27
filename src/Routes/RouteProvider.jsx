@@ -20,6 +20,7 @@ import AdminRoute from "./AdminRoute";
 import PrivateRoute from "./PrivateRoute";
 import GiftRedeem from "../Components/GiftRedeem";
 import AdminRedemptionsPending from "../Components/Dashboard/AdminRedemptionsPending";
+import Forbidden from "../Components/Forbidden";
 
 const router = createBrowserRouter([
   {
@@ -28,13 +29,49 @@ const router = createBrowserRouter([
     children: [
       { index: true, Component: Home },
       { path: "course-details", Component: CourseDetails },
-      { path: "my-classes", element:<PrivateRoute><Myclasses/></PrivateRoute> },
-      { path: "avater", element:<PrivateRoute><Avatar/></PrivateRoute> },
+      {
+        path: "my-classes",
+        element: (
+          <PrivateRoute>
+            <Myclasses />
+          </PrivateRoute>
+        ),
+      },
+      {
+        path: "avater",
+        element: (
+          <PrivateRoute>
+            <Avatar />
+          </PrivateRoute>
+        ),
+      },
       { path: "Premium", Component: Premium },
-      { path: "standings",element:<PrivateRoute><Standings/></PrivateRoute> },
-      { path: "games", element:<PrivateRoute><Games/></PrivateRoute> },
-      {path:"gift",element:<PrivateRoute><GiftRedeem/></PrivateRoute>},
+      {
+        path: "standings",
+        element: (
+          <PrivateRoute>
+            <Standings />
+          </PrivateRoute>
+        ),
+      },
+      {
+        path: "games",
+        element: (
+          <PrivateRoute>
+            <Games />
+          </PrivateRoute>
+        ),
+      },
+      {
+        path: "gift",
+        element: (
+          <PrivateRoute>
+            <GiftRedeem />
+          </PrivateRoute>
+        ),
+      },
       { path: "about", Component: About },
+      { path: "forbidden", Component: Forbidden },
     ],
   },
   {
@@ -53,7 +90,11 @@ const router = createBrowserRouter([
   },
   {
     path: "dashboard",
-    element:<AdminRoute><DashBoardLayout/></AdminRoute>,
+    element: (
+      <AdminRoute>
+        <DashBoardLayout />
+      </AdminRoute>
+    ),
     children: [
       {
         index: true,

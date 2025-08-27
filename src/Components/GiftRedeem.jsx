@@ -1,11 +1,12 @@
 import React, { useContext, useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ValueContext } from "../Context/ValueContext";
-import Useaxios from "../Hooks/Useaxios";
+import UseAxiosSecure from "../Hooks/UseAxiosSecure";
+
 
 
 export default function GiftRedeem() {
-  const axiosInstance = Useaxios();
+  const axiosInstance = UseAxiosSecure();
   const queryClient = useQueryClient();
   const { currentuser } = useContext(ValueContext);
   const isLoggedIn = !!currentuser?.email;
@@ -199,7 +200,7 @@ export default function GiftRedeem() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 items-stretch">
         {giftsLoading && (
           <div className="col-span-full flex justify-center py-10">
-            <span className="loading loading-bars loading-lg"></span>
+            <span className="loading loading-infinity loading-3xl"></span>
           </div>
         )}
         {giftsError && (

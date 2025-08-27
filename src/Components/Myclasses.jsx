@@ -3,6 +3,7 @@ import Swal from "sweetalert2/dist/sweetalert2.js";
 import "sweetalert2/src/sweetalert2.scss";
 import { ValueContext } from "../Context/ValueContext";
 import UseAxiosSecure from "../Hooks/UseAxiosSecure";
+import { useQueryClient } from "@tanstack/react-query";
 
 const Myclasses = () => {
   const axiosInstance = UseAxiosSecure();
@@ -17,18 +18,25 @@ const Myclasses = () => {
   const [showQuiz, setShowQuiz] = useState(false);
   const [quizAnswers, setQuizAnswers] = useState({});
   const [quizAttempts, setQuizAttempts] = useState({});
+  const queryClient = useQueryClient();
+
+  console.log(currentGems)
 
   // fetch user
+
+  // 1) Fetch the logged-in user (this endpoint returns a single object)
   useEffect(() => {
     if (!currentuser?.email) return;
     const fetchUser = async () => {
       try {
-        const res = await axiosInstance.get(`/users?email=${currentuser.email}`);
-        if (res.data && res.data.length > 0) {
-          const user = res.data[0];
-          setCurrentUserId(user._id);
-          setCurrentGems(Number(user.gems || 0));
-        }
+        const res = await axiosInstance.get("/users/email", {
+          params: { email: currentuser.email },
+        });
+        
+        const user = res.data;
+        const id = user?._id ?? currentuser.email;
+        setCurrentUserId(id);
+        setCurrentGems(Number(user?.gems || 0));
       } catch (err) {
         console.error("Failed to fetch user", err);
       }
@@ -36,40 +44,26 @@ const Myclasses = () => {
     fetchUser();
   }, [currentuser, axiosInstance]);
 
-  // fetch lessons + attempt state
+  // 2) Fetch lessons (independent of currentUserId so it never blocks)
   useEffect(() => {
-    if (!currentUserId) return;
     const fetchLessons = async () => {
       try {
         const res = await axiosInstance.get("/lessons");
-        setLessons(res.data);
-
-        const attempts = {};
-        await Promise.all(
-          res.data.map(async (lesson) => {
-            try {
-              const result = await axiosInstance.get(
-                `/quiz-results/${currentUserId}/${lesson._id}`
-              );
-              attempts[lesson._id] = result.data.attempted;
-            } catch {
-              attempts[lesson._id] = false;
-            }
-          })
-        );
-        setQuizAttempts(attempts);
+        setLessons(res.data || []);
       } catch (err) {
         console.error("Failed to fetch lessons", err);
       }
     };
     fetchLessons();
-  }, [axiosInstance, currentUserId]);
+  }, [axiosInstance]);
 
   const getYouTubeEmbedUrl = (url) => {
     if (!url) return "";
     const regExp = /^.*(youtu\.be\/|v\/|watch\?v=|watch\?.+&v=)([^#&?]*).*/;
     const match = url.match(regExp);
-    return match && match[2] ? `https://www.youtube.com/embed/${match[2]}` : url;
+    return match && match[2]
+      ? `https://www.youtube.com/embed/${match[2]}`
+      : url;
   };
 
   // helper to set current subpart
@@ -104,17 +98,6 @@ const Myclasses = () => {
     setQuizAnswers((prev) => ({ ...prev, [qIdx]: option }));
   };
 
-  const awardGems = async (award) => {
-    if (award <= 0) return;
-    try {
-      const newTotal = currentGems + award;
-      await axiosInstance.patch(`/users/gems/${currentuser.email}`, { gems: newTotal });
-      setCurrentGems(newTotal);
-    } catch (err) {
-      console.error("Failed to award gems", err);
-    }
-  };
-
   const submitQuiz = async () => {
     if (!currentUserId || expandedLesson === null) return;
     const quiz = lessons[expandedLesson].quiz;
@@ -125,7 +108,7 @@ const Myclasses = () => {
       0
     );
 
-    // save results
+    // save results (server may award gems here)
     try {
       await axiosInstance.post("/quiz-results", {
         userId: currentUserId,
@@ -141,13 +124,12 @@ const Myclasses = () => {
       console.error("Failed to save quiz result", err);
     }
 
-    // award
+    // award (client-side computed for UI only)
     let award = 0;
     if (correctCount === quiz.length) award = 2;
     else if (correctCount === quiz.length - 1) award = 1;
 
     if (correctCount === quiz.length) {
-      // 🎉 fun animated backdrop for perfect score
       await Swal.fire({
         title: "🎉 Amazing! Perfect Score!",
         html: `<b>You earned 2 gems 💎💎</b>`,
@@ -176,7 +158,58 @@ const Myclasses = () => {
       });
     }
 
-    await awardGems(award);
+    // ✅ Optimistic UI for navbar — only if we actually earned gems
+    if (award > 0) {
+      setCurrentGems((prev) => {
+        const newTotal = prev + award;
+
+        const apply = (old) => {
+          if (!old) return old;
+          // If navbar query returns an array from /users?email=...
+          if (Array.isArray(old)) {
+            if (!old[0]) return old;
+            return [{ ...old[0], gems: newTotal }];
+          }
+          // If navbar query returns a single user object
+          return { ...old, gems: newTotal };
+        };
+
+        // Update all likely cache keys the navbar might be using
+        const keys = [
+          ["user", currentuser?.email],
+          ["users", currentuser?.email],
+          ["user"],
+        ];
+        keys.forEach((k) => queryClient.setQueryData(k, apply));
+
+        return newTotal;
+      });
+
+      // ⛔️ DO NOT immediately refetch — it can bring the old value back.
+      // If you want, you can do a delayed sync later, e.g.:
+      // setTimeout(async () => {
+      //   try {
+      //     const fresh = await axiosInstance.get(`/users?email=${currentuser.email}`);
+      //     const freshTotal = Number(fresh.data?.[0]?.gems ?? 0);
+      //     const keys = [
+      //       ["user", currentuser?.email],
+      //       ["users", currentuser?.email],
+      //       ["user"],
+      //     ];
+      //     keys.forEach((k) =>
+      //       queryClient.setQueryData(k, (old) => {
+      //         if (!old) return old;
+      //         if (Array.isArray(old)) {
+      //           if (!old[0]) return old;
+      //           return [{ ...old[0], gems: freshTotal }];
+      //         }
+      //         return { ...old, gems: freshTotal };
+      //       })
+      //     );
+      //   } catch {}
+      // }, 1500);
+    }
+
     setShowQuiz(false);
     setQuizAnswers({});
   };
@@ -238,7 +271,7 @@ const Myclasses = () => {
         ) : selectedVideoLink ? (
           <>
             <iframe
-              src={selectedVideoLink}
+              src={selectedSubpartIndex !== null ? selectedVideoLink : ""}
               title="Lesson Video"
               allowFullScreen
               className="flex-grow w-full rounded-lg shadow"
@@ -248,7 +281,9 @@ const Myclasses = () => {
             <div className="mt-4 flex justify-center gap-4">
               <button
                 onClick={goPrev}
-                disabled={selectedSubpartIndex === 0 || selectedSubpartIndex === null}
+                disabled={
+                  selectedSubpartIndex === 0 || selectedSubpartIndex === null
+                }
                 className="btn btn-outline btn-accent"
               >
                 ⬅ Previous
@@ -258,7 +293,8 @@ const Myclasses = () => {
                 disabled={
                   expandedLesson === null ||
                   selectedSubpartIndex === null ||
-                  selectedSubpartIndex === (lessons[expandedLesson]?.parts.length ?? 0) - 1
+                  selectedSubpartIndex ===
+                    (lessons[expandedLesson]?.parts.length ?? 0) - 1
                 }
                 className="btn btn-outline btn-success"
               >
@@ -291,7 +327,7 @@ const Myclasses = () => {
             <div className="collapse-title font-semibold flex justify-between">
               {lesson.lessonHeading}
               {quizAttempts[lesson._id] && (
-                <span className="badge badge-success">✔ Done</span>
+                <span className="badge badge-success p-2">✔ Done</span>
               )}
             </div>
             <div className="collapse-content space-y-2">

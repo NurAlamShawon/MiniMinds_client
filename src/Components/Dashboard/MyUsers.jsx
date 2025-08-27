@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from "react";
-import Useaxios from "../../Hooks/Useaxios";
+import UseAxiosSecure from "../../Hooks/UseAxiosSecure";
+
 
 
 const MyUsers = () => {
-  const axiosInstance = Useaxios();
+  const axiosInstance =UseAxiosSecure ();
   const [users, setUsers] = useState([]);
 
   useEffect(() => {
@@ -55,7 +56,7 @@ const MyUsers = () => {
                   colSpan="4"
                   className="text-center p-4 text-gray-500"
                 >
-                  No users found
+                   <span className="loading loading-infinity loading-3xl mx-auto mt-10"></span>;
                 </td>
               </tr>
             )}

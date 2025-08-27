@@ -11,9 +11,9 @@ const UseUserRole = () => {
 
   const fetchUserRole = async (email) => {
     if (!email) return null;
-    const { data } = await axiosInstance.get(`/users?email=${email}`);
-    console.log("Fetched user:", data[0]);
-    return data[0]?.role;
+    const { data } = await axiosInstance.get(`/users/email?email=${email}`);
+    console.log("Fetched user:", data);
+    return data.role;
   };
 
   const email = currentuser?.email;

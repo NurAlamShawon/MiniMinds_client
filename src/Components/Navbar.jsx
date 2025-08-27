@@ -6,6 +6,9 @@ import { useQuery } from "@tanstack/react-query";
 import UseUserRole from "../Hooks/UseuserRole";
 import Useaxios from "../Hooks/Useaxios";
 
+
+
+
 const Navbar = () => {
   const { currentuser, signout } = useContext(ValueContext);
   const axiosInstance = Useaxios();
@@ -21,13 +24,13 @@ const Navbar = () => {
     queryKey: ["user", currentuser?.email],
     enabled: isLoggedIn,
     queryFn: async () => {
-      const res = await axiosInstance.get(`/users?email=${currentuser.email}`);
-      return res.data[0];
+      const res = await axiosInstance.get(`/users/email?email=${currentuser.email}`);
+      return res.data;
     },
   });
 
   return (
-    <div className="mb-10 raleway">
+    <div className="raleway">
       <div className="navbar bg-base-100 shadow-sm xl:px-10">
         {/* LEFT */}
         <div className="navbar-start">
@@ -47,7 +50,7 @@ const Navbar = () => {
 
             <ul
               tabIndex={0}
-              className="menu menu-sm space-y-1 dropdown-content bg-base-100 rounded-box z-1 mt-3 w-52 p-2 shadow"
+              className="menu menu-sm space-y-1 dropdown-content bg-base-100 rounded-box z-1 mt-3 w-56 p-2 shadow"
             >
               {/* If admin: only dashboard; else: show all public links */}
               {isAdmin ? (
@@ -107,7 +110,7 @@ const Navbar = () => {
           </ul>
 
           {/* Gems badge (only if logged in) */}
-          {isLoggedIn && (
+          {isLoggedIn && role==="user" && (
             <div className="mx-3 tooltip tooltip-bottom" data-tip="Your gems">
               <div className="badge badge-warning gap-2 px-3 py-3 text-base-100">
                 <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
@@ -137,9 +140,9 @@ const Navbar = () => {
           ) : (
             <div className="flex">
               <Link to="/authentication">
-                <button className="btn btn-info xl:mx-2">Login</button>
+                <button className="xl:ml-2 ml-2 btn btn-info xl:mx-2">Login</button>
               </Link>
-              <Link to="registration">
+              <Link to="authentication/registration">
                 <button className="btn btn-success xl:block hidden">Register</button>
               </Link>
             </div>

@@ -12,6 +12,7 @@ import { ValueContext } from "../Context/ValueContext";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import Swal from "sweetalert2";
 
+
 const Avatar = () => {
   const axiosInstance = Useaxios();
   const [avater, setavater] = useState([]);
@@ -62,7 +63,7 @@ const Avatar = () => {
   };
 
   return (
-    <div className="max-w-2xl xl:mx-auto  mx-4">
+    <div className="max-w-2xl xl:mx-auto mt-10  mx-4">
       <Swiper
         // install Swiper modules
         modules={[Navigation, A11y, Scrollbar]}

@@ -9,7 +9,7 @@ const DashBoardLayout = () => {
   console.log(role);
 
   return (
-    <div className="drawer lg:drawer-open">
+    <div className="drawer lg:drawer-open bg-gradient-to-r from-[#8d8d85] to-blue-50">
       <input id="my-drawer-3" type="checkbox" className="drawer-toggle" />
       <div className="drawer-content flex flex-col">
         {/* Navbar */}
@@ -45,7 +45,7 @@ const DashBoardLayout = () => {
           aria-label="close sidebar"
           className="drawer-overlay"
         ></label>
-        <ul className="menu bg-base-200 text-base-content min-h-full w-80 p-4">
+        <ul className="menu min-h-full w-80 p-4  bg-[#79909f] text-[#0e1114] font-semibold">
           {/* Sidebar content here */}
           <MiniMindsLogo />
           {/* admin part */}

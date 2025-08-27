@@ -5,7 +5,7 @@ import UseUserRole from "../../Hooks/UseuserRole";
 
 const Dashboard = () => {
   const { role } = UseUserRole();
-  console.log(role)
+
 
   if (role === "admin") {
     return <AdminDashboard/>;

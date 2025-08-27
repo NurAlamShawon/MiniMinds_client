@@ -4,7 +4,7 @@ import { Navigate } from "react-router";
 import { ValueContext } from "../Context/ValueContext";
 
 const axiosInstance = axios.create({
-  baseURL: "http://localhost:3000",
+  baseURL: "https://mini-minds-server.vercel.app",
 });
 
 const UseAxiosSecure = () => {

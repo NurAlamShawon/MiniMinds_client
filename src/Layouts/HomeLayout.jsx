@@ -5,7 +5,7 @@ import Footer from "../Components/Footer";
 
 const HomeLayout = () => {
   return (
-    <div>
+    <div className="bg-gradient-to-r from-[#DCCFC0] to-blue-50">
       <div className="sticky top-0 z-50">
         <Navbar />
       </div>

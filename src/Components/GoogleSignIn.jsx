@@ -12,7 +12,7 @@ const GoogleSignIn = () => {
   const loginwithgoogle = () => {
     signupwithgoogle()
       .then(async (result) => {
-        console.log(result);
+
 
         //save in the database
         const userInfo = {

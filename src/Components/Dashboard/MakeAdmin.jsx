@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-
 import Swal from "sweetalert2";
 import { FaSearch } from "react-icons/fa";
-import useAxiosSecure from "../../Hooks/UseAxiosSecure";
+import UseAxiosSecure from "../../Hooks/UseAxiosSecure";
+
 
 const MakeAdmin = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [searchTrigger, setSearchTrigger] = useState("");
-  const axiosInstance = useAxiosSecure();
+  const axiosInstance = UseAxiosSecure();
   const queryClient = useQueryClient();
 
   // Search when searchTrigger updates
@@ -20,8 +20,7 @@ const MakeAdmin = () => {
   } = useQuery({
     queryKey: ["userSearch", searchTrigger],
     queryFn: async () => {
-      const res = await axiosInstance.get(
-        `/users/search?email=${searchTrigger}`
+      const res = await axiosInstance.get(`/users/search?email=${searchTrigger}`
       );
       return Array.isArray(res.data) ? res.data : [res.data];
     },

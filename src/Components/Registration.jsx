@@ -71,7 +71,7 @@ const Registration = () => {
           created_At: new Date().toISOString(),
           last_log_in: new Date().toISOString(),
           img: url,
-          gems:0,
+          gems: 0,
         };
 
         const res = await axiosInstance.post("/users", userInfo);
@@ -80,7 +80,7 @@ const Registration = () => {
         // const user = userCredential.user;
         // console.log(user);
         // verification code
-        sendEmailVerification(auth.currentUser)
+        sendEmailVerification(auth.email)
           .then(() => {
             alert("Verification email sent. Please check your inbox.");
             // Optionally sign out the user until they verify
@@ -90,20 +90,6 @@ const Registration = () => {
           });
 
         navigate(location?.state || "/");
-
-        // update user
-        // updateProfile(auth.currentUser, {
-        //   displayName: name,
-        //   photoURL: url,
-        // })
-        //   .then(() => {
-        //     // console.log("profile updated", result);
-
-        //   })
-        //   .catch((error) => {
-        //     console.log(error);
-        //     seterror(error.message);
-        //   });
       })
       .catch((error) => {
         console.log(error);
@@ -238,7 +224,7 @@ const Registration = () => {
         <img
           src="https://i.postimg.cc/fWpYV7kk/auth-Image.png"
           alt=""
-          className="mx-auto mt-20"
+         className="mx-auto mt-40"
         />
       </div>
     </div>
