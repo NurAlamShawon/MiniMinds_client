@@ -3,24 +3,24 @@
     "id": "gift-1",
     "name": "Gift A",
     "img": "https://i.postimg.cc/xdQQXDwf/image-removebg-preview-6.png",
-    "cost": 120
+    "cost": 26
   },
   {
     "id": "gift-2",
     "name": "Gift B",
     "img": "https://i.postimg.cc/4dNT1v4j/image-removebg-preview-7.png",
-    "cost": 80
+    "cost": 25
   },
   {
     "id": "gift-3",
     "name": "Gift C",
     "img": "https://i.postimg.cc/hG0BxZn9/image-removebg-preview-8.png",
-    "cost": 60
+    "cost": 14
   },
   {
     "id": "gift-4",
     "name": "Gift D",
     "img": "https://i.postimg.cc/kgK9MXhY/image-removebg-preview-9.png",
-    "cost": 100
+    "cost": 13
   }
 ]
